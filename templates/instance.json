@@ -1,0 +1,128 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "",
+  "Resources": {
+    "WebAccessSg": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Web instance SG",
+        "SecurityGroupIngress": [
+          {
+            "ToPort": 80,
+            "FromPort": 80,
+            "IpProtocol": "tcp",
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "ToPort": 22,
+            "FromPort": 22,
+            "IpProtocol": "tcp",
+            "CidrIp": "86.138.135.38/32"
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-vpc-id"
+          }
+        }
+      }
+    },
+    "Instance": {
+      "Type": "AWS::EC2::Instance",
+      "Properties": {
+        "InstanceType": "t2.micro",
+        "SecurityGroupIds": [
+          {
+            "Fn::ImportValue": {
+              "Fn::Sub": "${EfsStackName}-access-sg-id"
+            }
+          },
+          {
+            "Fn::GetAtt": ["WebAccessSg", "GroupId"]
+          }
+        ],
+        "AvailabilityZone": {
+          "Fn::Sub": "${AWS::Region}a"
+        },
+        "ImageId": "ami-d834aba1",
+        "SubnetId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-public-subnet-a-id"
+          }
+        },
+        "KeyName": {
+          "Ref": "SshKeyname"
+        },
+        "UserData": {
+          "Fn::Base64": {
+            "Fn::Join": [
+              "\n",
+              [
+                "#!/bin/bash",
+                "yum update -y",
+                "yum install -y php71-cli php71-common nfs-utils",
+                "GLUSTERVERSION=\"3.10.10\"",
+                "yum install http://buildlogs.centos.org/centos/7/storage/x86_64/gluster-3.9/glusterfs-${GLUSTERVERSION}.el7.x86_64.rpm \\",
+                "http://buildlogs.centos.org/centos/7/storage/x86_64/gluster-3.9/glusterfs-fuse-${GLUSTERVERSION}.el7.x86_64.rpm \\",
+                "http://buildlogs.centos.org/centos/7/storage/x86_64/gluster-3.9/glusterfs-libs-${GLUSTERVERSION}.el7.x86_64.rpm \\",
+                "http://buildlogs.centos.org/centos/7/storage/x86_64/gluster-3.9/glusterfs-extra-xlators-${GLUSTERVERSION}.el7.x86_64.rpm \\",
+                "http://buildlogs.centos.org/centos/7/storage/x86_64/gluster-3.9/python-gluster-${GLUSTERVERSION}.el7.noarch.rpm \\",
+                "http://buildlogs.centos.org/centos/7/storage/x86_64/gluster-3.9/glusterfs-client-xlators-${GLUSTERVERSION}.el7.x86_64.rpm",
+                "mkdir -p /var/www-ebs /var/www-gluster /var/www-efs",
+                "mkfs.ext4 /dev/xvdc",
+                "mkfs.ext4 /dev/xvdd",
+                "mount /dev/sdc /var/www-ebs",
+                "mount /dev/sdd /var/www-gluster",
+                {
+                  "Fn::Sub": [
+                    "mount -t nfs -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 ${EfsVolumeId}.efs.${AWS::Region}.amazonaws.com:/ /var/www-efs",
+                    {
+                      "EfsVolumeId": {
+                        "Fn::ImportValue": { "Fn::Sub": "${EfsStackName}-volume-id"}
+                      }
+                    }
+                  ]
+                }
+              ]
+            ]
+          }
+        },
+        "Volumes": [
+          {
+            "Device": "/dev/sdc",
+            "VolumeId": {
+              "Fn::ImportValue": {
+                "Fn::Sub": "${EbsStackName}-volume"
+              }
+            }
+          },
+          {
+            "Device": "/dev/sdd",
+            "VolumeId": {
+              "Fn::ImportValue": {
+                "Fn::Sub": "${GlusterStackName}-volume"
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "Parameters": {
+    "VpcStackName": {
+      "Type": "String"
+    },
+    "EfsStackName": {
+      "Type": "String"
+    },
+    "EbsStackName": {
+      "Type": "String"
+    },
+    "GlusterStackName": {
+      "Type": "String"
+    },
+    "SshKeyname": {
+      "Type": "String"
+    }
+  }
+}

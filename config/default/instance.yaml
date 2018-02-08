@@ -1,0 +1,12 @@
+template_path: templates/instance.json
+parameters:
+  VpcStackName: {{ environment_config.project_code }}-default-vpc
+  EfsStackName: {{ environment_config.project_code }}-default-efs
+  EbsStackName: {{ environment_config.project_code }}-default-ebs
+  GlusterStackName: {{ environment_config.project_code }}-default-gluster
+  SshKeyname: default-pair
+dependencies:
+  - vpc
+  - gluster
+  - efs
+  - ebs

@@ -1,0 +1,194 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "",
+  "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsHostnames": true,
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "fs-benchmarks"
+          }
+        ]
+      }
+    },
+    "Igw": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {}
+    },
+    "IgwVpcAttachment": {
+      "Type" : "AWS::EC2::VPCGatewayAttachment",
+      "Properties" : {
+        "InternetGatewayId" : {
+          "Ref": "Igw"
+        },
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "RouteTable": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "DefaultRoute": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "Igw"
+        },
+        "RouteTableId": {
+          "Ref": "RouteTable"
+        }
+      }
+    },
+    "PublicSubnetA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "10.0.0.0/24",
+        "MapPublicIpOnLaunch": true,
+        "AvailabilityZone": { "Fn::Sub": "${AWS::Region}a" },
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "PublicSubnetAEgressRoute": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteTable"
+        },
+        "SubnetId": {
+          "Ref": "PublicSubnetA"
+        }
+      }
+    },
+    "PublicSubnetB": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "10.0.1.0/24",
+        "MapPublicIpOnLaunch": true,
+        "AvailabilityZone": { "Fn::Sub": "${AWS::Region}b" },
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "PublicSubnetBEgressRoute": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteTable"
+        },
+        "SubnetId": {
+          "Ref": "PublicSubnetB"
+        }
+      }
+    },
+    "PublicSubnetC": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "10.0.2.0/24",
+        "MapPublicIpOnLaunch": true,
+        "AvailabilityZone": { "Fn::Sub": "${AWS::Region}c" },
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "PublicSubnetCEgressRoute": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "RouteTable"
+        },
+        "SubnetId": {
+          "Ref": "PublicSubnetC"
+        }
+      }
+    },
+    "PrivateSubnetA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "10.0.50.0/24",
+        "AvailabilityZone": { "Fn::Sub": "${AWS::Region}a" },
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "PrivateSubnetB": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "10.0.51.0/24",
+        "AvailabilityZone": { "Fn::Sub": "${AWS::Region}b" },
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    },
+    "PrivateSubnetC": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "CidrBlock": "10.0.52.0/24",
+        "AvailabilityZone": { "Fn::Sub": "${AWS::Region}c" },
+        "VpcId": {
+          "Ref": "Vpc"
+        }
+      }
+    }
+  },
+  "Outputs": {
+    "VpcId": {
+      "Export": {
+        "Name": { "Fn::Sub": "${AWS::StackName}-vpc-id" }
+      },
+      "Value": { "Ref": "Vpc" }
+    },
+    "PublicSubnetAId": {
+      "Export": {
+        "Name": { "Fn::Sub": "${AWS::StackName}-public-subnet-a-id" }
+      },
+      "Value": { "Ref": "PublicSubnetA" }
+    },
+    "PublicSubnetBId": {
+      "Export": {
+        "Name": { "Fn::Sub": "${AWS::StackName}-public-subnet-b-id" }
+      },
+      "Value": { "Ref": "PublicSubnetB" }
+    },
+    "PublicSubnetCId": {
+      "Export": {
+        "Name": { "Fn::Sub": "${AWS::StackName}-public-subnet-c-id" }
+      },
+      "Value": { "Ref": "PublicSubnetC" }
+    },
+    "PrivateSubnetAId": {
+      "Export": {
+        "Name": { "Fn::Sub": "${AWS::StackName}-private-subnet-a-id" }
+      },
+      "Value": { "Ref": "PrivateSubnetA" }
+    },
+    "PrivateSubnetBId": {
+      "Export": {
+        "Name": { "Fn::Sub": "${AWS::StackName}-private-subnet-b-id" }
+      },
+      "Value": { "Ref": "PrivateSubnetB" }
+    },
+    "PrivateSubnetCId": {
+      "Export": {
+        "Name": { "Fn::Sub": "${AWS::StackName}-private-subnet-c-id" }
+      },
+      "Value": { "Ref": "PrivateSubnetC" }
+    }
+  }
+}

@@ -1,0 +1,128 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "",
+  "Resources": {
+    "EfsSg": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "EFS Mount Target SG",
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol" : "tcp",
+            "FromPort": 2049,
+            "ToPort" : 2049,
+            "SourceSecurityGroupId": {
+              "Fn::GetAtt": [ "EfsAccessSg", "GroupId" ]
+            }
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": { "Fn::Sub": "${VpcStackName}-vpc-id" }
+        }
+      }
+    },
+    "EfsAccessSg": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "EFS Access SG",
+        "VpcId": {
+          "Fn::ImportValue": { "Fn::Sub": "${VpcStackName}-vpc-id" }
+        }
+      }
+    },
+    "EfsVol": {
+      "Type": "AWS::EFS::FileSystem",
+      "Properties": {
+        "FileSystemTags": [
+          {
+            "Key": "Name",
+            "Value": {
+              "Fn::Sub": "${AWS::StackName}"
+            }
+          }
+        ]
+      }
+    },
+    "EfsMountTargetA": {
+      "Type": "AWS::EFS::MountTarget",
+      "Properties": {
+        "FileSystemId": {
+          "Ref": "EfsVol"
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "EfsSg"
+          }
+        ],
+        "SubnetId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-private-subnet-a-id"
+          }
+        }
+      }
+    },
+    "EfsMountTargetB": {
+      "Type": "AWS::EFS::MountTarget",
+      "Properties": {
+        "FileSystemId": {
+          "Ref": "EfsVol"
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "EfsSg"
+          }
+        ],
+        "SubnetId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-private-subnet-b-id"
+          }
+        }
+      }
+    },
+    "EfsMountTargetC": {
+      "Type": "AWS::EFS::MountTarget",
+      "Properties": {
+        "FileSystemId": {
+          "Ref": "EfsVol"
+        },
+        "SecurityGroups": [
+          {
+            "Ref": "EfsSg"
+          }
+        ],
+        "SubnetId": {
+          "Fn::ImportValue": {
+            "Fn::Sub": "${VpcStackName}-private-subnet-c-id"
+          }
+        }
+      }
+    }
+  },
+  "Parameters": {
+    "VpcStackName": {
+      "Type": "String"
+    }
+  },
+  "Outputs": {
+    "EfsAccessSg": {
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-access-sg-id"
+        }
+      },
+      "Value": {
+        "Ref": "EfsAccessSg"
+      }
+    },
+    "EfsVolumeId": {
+      "Export": {
+        "Name": {
+          "Fn::Sub": "${AWS::StackName}-volume-id"
+        }
+      },
+      "Value": {
+        "Ref": "EfsVol"
+      }
+    }
+  }
+}
